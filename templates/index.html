@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Data Mapper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo-icon">📊</div>
+            <h1>Excel Data Mapper</h1>
+            <p>Seamlessly map and update data between workbooks</p>
+        </header>
+        
+        <main>
+            <!-- Step 1: File Upload & Target Selection -->
+            <section id="step-1" class="step-card active">
+                <h2>1. Select Workbooks</h2>
+                <form id="upload-form">
+                    <div class="file-inputs">
+                        <div class="file-group source-group">
+                            <label for="source-file">
+                                <span class="label-title">Source Workbook</span>
+                                <span class="label-desc">Extract data from here</span>
+                            </label>
+                            <input type="file" id="source-file" name="source_file" accept=".xlsx, .xls" required>
+                        </div>
+                        <div class="file-group target-group">
+                            <label>
+                                <span class="label-title">Target Workbook</span>
+                                <span class="label-desc">Update and overwrite this file</span>
+                            </label>
+                            
+                            <div class="target-mode-toggle" style="margin-bottom: 0.8rem; display: flex; gap: 0.5rem; justify-content: center;">
+                                <label style="cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;">
+                                    <input type="radio" name="target_mode" value="path" checked> Local File Path
+                                </label>
+                                <label style="cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;">
+                                    <input type="radio" name="target_mode" value="upload"> Upload File
+                                </label>
+                            </div>
+
+                            <div id="target-path-wrapper">
+                                <input type="text" id="target-file-path" name="target_file_path" placeholder="e.g. C:\Users\...\Target.xlsx" style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.8); color: white; font-size: 0.85rem;">
+                                <small style="display: block; margin-top: 0.4rem; color: var(--text-muted); font-size: 0.75rem;">Enter full file path on this laptop</small>
+                            </div>
+
+                            <div id="target-upload-wrapper" style="display: none;">
+                                <input type="file" id="target-file" name="target_file" accept=".xlsx, .xls">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="primary-btn">Load & Continue</button>
+                </form>
+                <div class="loading" id="upload-loading" style="display: none;">
+                    <div class="spinner"></div> Loading and analyzing files...
+                </div>
+            </section>
+
+            <!-- Step 2: Sheet & Row Selection -->
+            <section id="step-2" class="step-card" style="display: none;">
+                <h2>2. Select Sheets & Starting Rows</h2>
+                <div class="mapping-container">
+                    <div class="mapping-section source-mapping">
+                        <h3>Source Settings</h3>
+                        <div class="form-group">
+                            <label for="source-sheet">Worksheet</label>
+                            <select id="source-sheet"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="source-start-row">Starting Row (Header row)</label>
+                            <input type="number" id="source-start-row" value="1" min="1">
+                        </div>
+                    </div>
+                    <div class="mapping-section target-mapping">
+                        <h3>Target Settings</h3>
+                        <div class="form-group">
+                            <label for="target-sheet">Worksheet</label>
+                            <select id="target-sheet"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="target-start-row">Starting Row (Header row)</label>
+                            <input type="number" id="target-start-row" value="1" min="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="btn-back-1" class="secondary-btn">Back</button>
+                    <button id="btn-next-2" class="primary-btn">Get Columns</button>
+                </div>
+                <div class="loading" id="columns-loading" style="display: none;">
+                    <div class="spinner"></div> Fetching columns...
+                </div>
+            </section>
+
+            <!-- Step 3: Column Mapping -->
+            <section id="step-3" class="step-card" style="display: none;">
+                <h2>3. Map Columns</h2>
+                <div class="mapping-container">
+                    <div class="mapping-section key-mapping">
+                        <h3>Lookup Key (Match rows)</h3>
+                        <div class="form-group">
+                            <label for="source-key-col">Source Column</label>
+                            <select id="source-key-col"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="target-key-col">Target Column</label>
+                            <select id="target-key-col"></select>
+                        </div>
+                    </div>
+                    <div class="mapping-section value-mapping">
+                        <h3>Values to Update</h3>
+                        <div id="value-mappings-container">
+                            <div class="value-mapping-row" style="margin-bottom: 1rem; position: relative;">
+                                <div class="form-group">
+                                    <label>Source Column</label>
+                                    <select class="source-val-col"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Target Column</label>
+                                    <select class="target-val-col"></select>
+                                </div>
+                                <button type="button" class="remove-mapping-btn secondary-btn" style="display: none; padding: 0.2rem 0.5rem; position: absolute; top: 0; right: 0; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: #FCA5A5;">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-mapping-btn" class="secondary-btn" style="width: 100%; font-size: 0.9rem; padding: 0.5rem; border: 1px dashed rgba(255,255,255,0.2);">+ Add another column mapping</button>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="btn-back-2" class="secondary-btn">Back</button>
+                    <button id="btn-process" class="primary-btn">Process Files</button>
+                </div>
+                <div class="loading" id="process-loading" style="display: none;">
+                    <div class="spinner"></div> Processing updates...
+                </div>
+            </section>
+            
+            <!-- Step 4: Result -->
+            <section id="step-4" class="step-card result-card" style="display: none;">
+                <div class="success-icon">✓</div>
+                <h2>Processing Complete!</h2>
+                <p id="result-message"></p>
+                <div class="actions center-actions">
+                    <a id="download-link" href="#" class="primary-btn" style="text-decoration: none;">Download Updated File</a>
+                    <button id="btn-start-over" class="secondary-btn">Start Over</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
